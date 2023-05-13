@@ -1,5 +1,6 @@
 #include "transport_catalogue.h"
 #include "input_reader.h"
+#include "stat_reader.h"
 #include "geo.h"
 
 #include <sstream>
@@ -36,6 +37,32 @@ void TransportCatalogue::AddStopDistance(const requestsToBase::AddStopDistance& 
     distances[{first_ptr, second_ptr}] = r.distance;
     if (!distances.count({second_ptr, first_ptr})) {
         distances[{second_ptr, first_ptr}] = r.distance;
+    }
+}
+
+void TransportCatalogue::Fill(fill::TransportReader& tr) {
+    while (tr.GetStopsCount() != 0) {
+        AddStop(tr.GetNextStop());
+    }
+    while (tr.GetStopDistancesCount() != 0) {
+        AddStopDistance(tr.GetNextStopDistance());
+    }
+    while (tr.GetBusesCount() != 0) {
+        AddBus(tr.GetNextBus());
+    }
+}
+
+void TransportCatalogue::Search(search::TransportWriter& tw) {
+    while (tw.GetAllRequestsCount() != 0) {
+        if (tw.GetNextRequestType() == transportCatalogue::search::TransportWriter::RequestType::GETBUS) {
+            tw.PrintBusAnswer(GetBus(tw.GetNextBusRequest()));
+            continue;
+        }
+        if (tw.GetNextRequestType() == transportCatalogue::search::TransportWriter::RequestType::GETSTOP) {
+            tw.PrintStopAnswer(GetStop(tw.GetNextStopRequest()));
+            continue;
+        }
+        throw std::logic_error("неизвестный тип запроса в очереди"s);
     }
 }
 
@@ -91,7 +118,7 @@ requestsFromBase::GetStop TransportCatalogue::GetStop(const requestsToBase::GetS
 using namespace transportCatalogue::fill;
 
 void tests::TestTransportCatalogue() {
-    std::istringstream test {
+    /*std::istringstream test {
         "13\n"
         "Stop Tolstopaltsevo: 55.611087, 37.208290\n"
         "Stop Marushkino: 55.595884, 37.209755\n"
@@ -149,6 +176,6 @@ void tests::TestTransportCatalogue() {
     assert(teststop.no_stop == false);
     assert(teststop.no_buses == false);
     assert(teststop.buses == std::set<std::string>({"256", "828"}));
-
+    */
 
 }

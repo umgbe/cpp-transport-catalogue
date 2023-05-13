@@ -84,6 +84,14 @@ struct GetStop {
 
 }
 
+namespace fill {
+    class TransportReader;
+}
+
+namespace search {
+    class TransportWriter;
+}
+
 namespace base {
 
 class TransportCatalogue {
@@ -91,15 +99,22 @@ class TransportCatalogue {
 public:
 
     TransportCatalogue() = default;
+    
+    void Fill(fill::TransportReader& tr);
+    void Search(search::TransportWriter& tw);
+
+
+    /*Подскажите подробнее, что нужно изменить в этих функциях?
+    Модули TransportReader и TransportWriter и так обмениваются
+    информацией с TransportCatalogue только с помощью структур из
+    пространств requestsToBase и requestsFromBase, необработанных
+    строк тут не передаётся.*/
 
     void AddStop(const requestsToBase::AddStop& r);
-
     void AddBus(const requestsToBase::AddBus& r);
-
     void AddStopDistance(const requestsToBase::AddStopDistance& r);
 
     requestsFromBase::GetBus GetBus(const requestsToBase::GetBus& r);
-
     requestsFromBase::GetStop GetStop(const requestsToBase::GetStop& r);
 
     struct Stop {
