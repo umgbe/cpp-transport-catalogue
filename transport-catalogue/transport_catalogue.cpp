@@ -10,14 +10,35 @@
 using namespace transportCatalogue;
 using namespace transportCatalogue::base;
 
-void TransportCatalogue::AddStop(const requestsToBase::AddStop& r) {
-    stops.push_back({r.name, r.latitude, r.longitude});
-    Stop* ptr = &stops.back();
-    stopname_to_stop.insert({stops.back().name, ptr});
+void TransportCatalogue::AddStop(const requestsToBase::StopInfo& r) {
+    Stop* ptr;
+    if (!stopname_to_stop.count(r.name)) {
+        stops.push_back({r.name, r.latitude, r.longitude});
+        ptr = &stops.back();
+        stopname_to_stop.insert({stops.back().name, ptr});
+    } else {
+        ptr = stopname_to_stop[r.name];
+        ptr->latitude = r.latitude;
+        ptr->longitude = r.longitude;
+    }
     stops_to_buses.insert({ptr, std::vector<Bus*>()});
+    for (const auto [other_stop_name, distance] : r.distances) {
+        Stop* other_ptr;
+        if (!stopname_to_stop.count(other_stop_name)) {            
+            stops.push_back({other_stop_name, 1000.0, 1000.0});
+            other_ptr = &stops.back();
+            stopname_to_stop.insert({stops.back().name, other_ptr});
+        } else {
+            other_ptr = stopname_to_stop[other_stop_name];
+        }
+        distances[{ptr, other_ptr}] = distance;
+        if (!distances.count({other_ptr, ptr})) {
+            distances[{other_ptr, ptr}] = distance;
+        }
+    }
 }
 
-void TransportCatalogue::AddBus(const requestsToBase::AddBus& r) {
+void TransportCatalogue::AddBus(const requestsToBase::BusInfo& r) {
     Bus new_bus;
     new_bus.name = r.name;
     for (const std::string& stop_name : r.stops_names) {
@@ -31,43 +52,8 @@ void TransportCatalogue::AddBus(const requestsToBase::AddBus& r) {
     busname_to_bus.insert({buses.back().name, ptr});
 }
 
-void TransportCatalogue::AddStopDistance(const requestsToBase::AddStopDistance& r) {
-    Stop* first_ptr = stopname_to_stop[r.name_first];
-    Stop* second_ptr = stopname_to_stop[r.name_second];
-    distances[{first_ptr, second_ptr}] = r.distance;
-    if (!distances.count({second_ptr, first_ptr})) {
-        distances[{second_ptr, first_ptr}] = r.distance;
-    }
-}
-
-void TransportCatalogue::Fill(fill::TransportReader& tr) {
-    while (tr.GetStopsCount() != 0) {
-        AddStop(tr.GetNextStop());
-    }
-    while (tr.GetStopDistancesCount() != 0) {
-        AddStopDistance(tr.GetNextStopDistance());
-    }
-    while (tr.GetBusesCount() != 0) {
-        AddBus(tr.GetNextBus());
-    }
-}
-
-void TransportCatalogue::Search(search::TransportWriter& tw) {
-    while (tw.GetAllRequestsCount() != 0) {
-        if (tw.GetNextRequestType() == transportCatalogue::search::TransportWriter::RequestType::GETBUS) {
-            tw.PrintBusAnswer(GetBus(tw.GetNextBusRequest()));
-            continue;
-        }
-        if (tw.GetNextRequestType() == transportCatalogue::search::TransportWriter::RequestType::GETSTOP) {
-            tw.PrintStopAnswer(GetStop(tw.GetNextStopRequest()));
-            continue;
-        }
-        throw std::logic_error("неизвестный тип запроса в очереди"s);
-    }
-}
-
-requestsFromBase::GetBus TransportCatalogue::GetBus(const requestsToBase::GetBus& r) {
-    requestsFromBase::GetBus result;
+requestsFromBase::BusInfo TransportCatalogue::GetBus(const requestsToBase::BusInfo& r) {
+    requestsFromBase::BusInfo result;
     result.name = r.name;
     if (!busname_to_bus.count(r.name)) {
         result.bus_found = false;
@@ -96,8 +82,8 @@ requestsFromBase::GetBus TransportCatalogue::GetBus(const requestsToBase::GetBus
     return result;
 }
 
-requestsFromBase::GetStop TransportCatalogue::GetStop(const requestsToBase::GetStop& r) {
-    requestsFromBase::GetStop result;
+requestsFromBase::StopInfo TransportCatalogue::GetStop(const requestsToBase::StopInfo& r) {
+    requestsFromBase::StopInfo result;
     result.name = r.name;
     if (!stopname_to_stop.count(r.name)) {
         result.no_stop = true;

@@ -9,6 +9,6 @@ int main() {
     transportCatalogue::fill::TransportReader tr(std::cin);
     transportCatalogue::search::TransportWriter tw(std::cin, std::cout);
     transportCatalogue::base::TransportCatalogue tc;
-    tc.Fill(tr);
-    tc.Search(tw);
+    tr.Fill(tc);
+    tw.Search(tc);
 }

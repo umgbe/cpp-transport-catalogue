@@ -11,62 +11,23 @@ namespace transportCatalogue {
 
 namespace requestsToBase {
 
-struct AddStop {
+struct StopInfo {
     std::string name;
     double latitude;
     double longitude;
-
-    //для тестов
-    bool operator==(const AddStop& other) {
-        return (name == other.name) && (latitude == other.latitude) && (longitude == other.longitude);
-    }
-
+    std::unordered_map<std::string, int> distances;
 };
 
-struct AddStopDistance {
-    std::string name_first;
-    std::string name_second;
-    int distance;
-
-    //для тестов
-    bool operator==(const AddStopDistance& other) {
-        return (name_first == other.name_first) && (name_second == other.name_second) && (distance == other.distance);
-    }
-};
-
-struct AddBus {
+struct BusInfo {
     std::string name;
     std::vector<std::string> stops_names;
-
-    //для тестов
-    bool operator==(const AddBus& other) {
-        return (name == other.name) && (stops_names == other.stops_names);
-    }
-};
-
-struct GetBus {
-    std::string name;
-
-    //для тестов
-    bool operator==(const GetBus& other) {
-        return (name == other.name);
-    }
-};
-
-struct GetStop {
-    std::string name;
-
-    //для тестов
-    bool operator==(const GetStop& other) {
-        return (name == other.name);
-    }
 };
 
 }
 
 namespace requestsFromBase {
 
-struct GetBus {
+struct BusInfo {
     bool bus_found;
     std::string name;
     int stops_count;
@@ -75,21 +36,13 @@ struct GetBus {
     double curvature;
 };
 
-struct GetStop {
+struct StopInfo {
     bool no_stop;
     bool no_buses;
     std::string name;
     std::set<std::string> buses;
 };
 
-}
-
-namespace fill {
-    class TransportReader;
-}
-
-namespace search {
-    class TransportWriter;
 }
 
 namespace base {
@@ -99,23 +52,14 @@ class TransportCatalogue {
 public:
 
     TransportCatalogue() = default;
-    
-    void Fill(fill::TransportReader& tr);
-    void Search(search::TransportWriter& tw);
 
+    void AddStop(const requestsToBase::StopInfo& r);
+    void AddBus(const requestsToBase::BusInfo& r);
 
-    /*Подскажите подробнее, что нужно изменить в этих функциях?
-    Модули TransportReader и TransportWriter и так обмениваются
-    информацией с TransportCatalogue только с помощью структур из
-    пространств requestsToBase и requestsFromBase, необработанных
-    строк тут не передаётся.*/
+    requestsFromBase::BusInfo GetBus(const requestsToBase::BusInfo& r);
+    requestsFromBase::StopInfo GetStop(const requestsToBase::StopInfo& r);
 
-    void AddStop(const requestsToBase::AddStop& r);
-    void AddBus(const requestsToBase::AddBus& r);
-    void AddStopDistance(const requestsToBase::AddStopDistance& r);
-
-    requestsFromBase::GetBus GetBus(const requestsToBase::GetBus& r);
-    requestsFromBase::GetStop GetStop(const requestsToBase::GetStop& r);
+private:
 
     struct Stop {
         std::string name;
@@ -128,14 +72,10 @@ public:
         std::vector<Stop*> stops;
     };
 
-private:
-
     std::deque<Stop> stops;
-
     std::unordered_map<std::string_view, Stop*> stopname_to_stop;
 
     std::deque<Bus> buses;
-
     std::unordered_map<std::string_view, Bus*> busname_to_bus;
 
     std::unordered_map<Stop*, std::vector<Bus*>> stops_to_buses;

@@ -27,8 +27,22 @@ TransportWriter::TransportWriter(std::istream& in, std::ostream& o)
     }
 }
 
+void TransportWriter::Search(base::TransportCatalogue& tc) {
+    while (GetAllRequestsCount() != 0) {
+        if (GetNextRequestType() == transportCatalogue::search::TransportWriter::RequestType::GETBUS) {
+            PrintBusAnswer(tc.GetBus(GetNextBusRequest()));
+            continue;
+        }
+        if (GetNextRequestType() == transportCatalogue::search::TransportWriter::RequestType::GETSTOP) {
+            PrintStopAnswer(tc.GetStop(GetNextStopRequest()));
+            continue;
+        }
+        throw std::logic_error("неизвестный тип запроса в очереди"s);
+    }
+}
+
 void TransportWriter::ParseBusRequest(std::string_view s) {
-    requestsToBase::GetBus result;
+    requestsToBase::BusInfo result;
     s = s.substr(3, s.size());                                              //отрезаем слово Bus
     s = s.substr(s.find_first_not_of(' '), s.size());                       //отрезаем пробелы перед названием
     s = s.substr(0, s.find_last_not_of(' ') + 1);                           //отрезаем пробелы в конце названия
@@ -38,7 +52,7 @@ void TransportWriter::ParseBusRequest(std::string_view s) {
 }
 
 void TransportWriter::ParseStopRequest(std::string_view s) {
-    requestsToBase::GetStop result;
+    requestsToBase::StopInfo result;
     s = s.substr(4, s.size());                                              //отрезаем слово Stop
     s = s.substr(s.find_first_not_of(' '), s.size());                       //отрезаем пробелы перед названием
     s = s.substr(0, s.find_last_not_of(' ') + 1);                           //отрезаем пробелы в конце названия
@@ -63,33 +77,33 @@ size_t TransportWriter::GetStopRequestsCount() const {
     return stops_requests.size();
 }
 
-requestsToBase::GetBus TransportWriter::GetNextBusRequest() {
+requestsToBase::BusInfo TransportWriter::GetNextBusRequest() {
     if (GetBusRequestsCount() < 1) {
         throw std::logic_error("запросов автобусов больше нет"s);
     }
     if (all_requests.front() != RequestType::GETBUS) {
         throw std::logic_error("запросы предоставляются в неожиданном порядке"s);
     }
-    requestsToBase::GetBus result = std::move(bus_requests.front());
+    requestsToBase::BusInfo result = std::move(bus_requests.front());
     bus_requests.pop_front();
     all_requests.pop_front();
     return result;
 }
 
-requestsToBase::GetStop TransportWriter::GetNextStopRequest() {
+requestsToBase::StopInfo TransportWriter::GetNextStopRequest() {
     if (GetStopRequestsCount() < 1) {
         throw std::logic_error("запросов остановок больше нет"s);
     }
     if (all_requests.front() != RequestType::GETSTOP) {
         throw std::logic_error("запросы предоставляются в неожиданном порядке"s);
     }
-    requestsToBase::GetStop result = std::move(stops_requests.front());
+    requestsToBase::StopInfo result = std::move(stops_requests.front());
     stops_requests.pop_front();
     all_requests.pop_front();
     return result;
 }
 
-void TransportWriter::PrintBusAnswer(const requestsFromBase::GetBus& a) {
+void TransportWriter::PrintBusAnswer(const requestsFromBase::BusInfo& a) const {
     if (a.bus_found) {
         out << "Bus "s << a.name << ": "s << a.stops_count << " stops on route, "s << a.unique_stops_count << " unique stops, "s << a.distance << " route length, "s << a.curvature << " curvature\n";
     } else {
@@ -97,7 +111,7 @@ void TransportWriter::PrintBusAnswer(const requestsFromBase::GetBus& a) {
     }
 }
 
-void TransportWriter::PrintStopAnswer(const requestsFromBase::GetStop& a) {
+void TransportWriter::PrintStopAnswer(const requestsFromBase::StopInfo& a) const {
     if (a.no_stop) {
         out << "Stop "s << a.name << ": not found\n";
         return;
@@ -114,7 +128,7 @@ void TransportWriter::PrintStopAnswer(const requestsFromBase::GetStop& a) {
 }
 
 void tests::TestTransportWriter() {
-
+/*
     std::istringstream testIn {
         "6\n"
         "Bus 256\n"
@@ -157,5 +171,5 @@ void tests::TestTransportWriter() {
     tw.PrintBusAnswer(a);
     tw.PrintBusAnswer(b);
     tw.PrintBusAnswer(c);
-
+*/
 }

@@ -15,6 +15,10 @@ public:
 
     TransportWriter(std::istream& in, std::ostream& o);
 
+    void Search(base::TransportCatalogue& tc);
+
+private:
+
     enum class RequestType {
         GETBUS,
         GETSTOP,
@@ -26,14 +30,11 @@ public:
 
     RequestType GetNextRequestType() const;
 
-    requestsToBase::GetBus GetNextBusRequest();
-    requestsToBase::GetStop GetNextStopRequest();
+    requestsToBase::BusInfo GetNextBusRequest();
+    requestsToBase::StopInfo GetNextStopRequest();
 
-    void PrintBusAnswer(const requestsFromBase::GetBus& a);
-    void PrintStopAnswer(const requestsFromBase::GetStop& a);
-
-
-private:
+    void PrintBusAnswer(const requestsFromBase::BusInfo& a) const;
+    void PrintStopAnswer(const requestsFromBase::StopInfo& a) const;
 
     void ParseBusRequest(std::string_view s);
     void ParseStopRequest(std::string_view s);
@@ -41,8 +42,8 @@ private:
     std::ostream& out;
 
     std::deque<RequestType> all_requests;
-    std::deque<requestsToBase::GetBus> bus_requests;
-    std::deque<requestsToBase::GetStop> stops_requests;
+    std::deque<requestsToBase::BusInfo> bus_requests;
+    std::deque<requestsToBase::StopInfo> stops_requests;
 
 };
 
