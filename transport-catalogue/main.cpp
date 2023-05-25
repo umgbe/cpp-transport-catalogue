@@ -1,14 +1,15 @@
 #include <iostream>
 #include <sstream>
 
-#include "transport_catalogue.h"
-#include "input_reader.h"
-#include "stat_reader.h"
+#include "json_reader.h"
 
 int main() {
-    transportCatalogue::fill::TransportReader tr(std::cin);
-    transportCatalogue::search::TransportWriter tw(std::cin, std::cout);
     transportCatalogue::base::TransportCatalogue tc;
-    tr.Fill(tc);
-    tw.Search(tc);
+    transportCatalogue::requestsProcessing::RequestHandler rh;
+    mapRenderer::MapRenderer mr;
+    transportCatalogue::requestsProcessing::JsonReader jr(std::cin);
+    transportCatalogue::requestsProcessing::JsonWriter jw(std::cout);
+    rh.GetRequests(jr);
+    rh.Fill(tc, mr);
+    rh.Search(tc, mr, jw);
 }

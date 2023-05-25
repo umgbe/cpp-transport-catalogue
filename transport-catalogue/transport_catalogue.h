@@ -7,43 +7,9 @@
 #include <deque>
 #include <set>
 
+#include "domain.h"
+
 namespace transportCatalogue {
-
-namespace requestsToBase {
-
-struct StopInfo {
-    std::string name;
-    double latitude;
-    double longitude;
-    std::unordered_map<std::string, int> distances;
-};
-
-struct BusInfo {
-    std::string name;
-    std::vector<std::string> stops_names;
-};
-
-}
-
-namespace requestsFromBase {
-
-struct BusInfo {
-    bool bus_found;
-    std::string name;
-    int stops_count;
-    int unique_stops_count;
-    double distance;
-    double curvature;
-};
-
-struct StopInfo {
-    bool no_stop;
-    bool no_buses;
-    std::string name;
-    std::set<std::string> buses;
-};
-
-}
 
 namespace base {
 
@@ -53,24 +19,13 @@ public:
 
     TransportCatalogue() = default;
 
-    void AddStop(const requestsToBase::StopInfo& r);
-    void AddBus(const requestsToBase::BusInfo& r);
+    void AddStop(const requestsToFill::StopInfo& r);
+    void AddBus(const requestsToFill::BusInfo& r);
 
-    requestsFromBase::BusInfo GetBus(const requestsToBase::BusInfo& r);
-    requestsFromBase::StopInfo GetStop(const requestsToBase::StopInfo& r);
+    answersFromBase::BusInfo GetBus(const requestsToSearch::BusInfo& r);
+    answersFromBase::StopInfo GetStop(const requestsToSearch::StopInfo& r);
 
 private:
-
-    struct Stop {
-        std::string name;
-        double latitude;
-        double longitude;
-    };
-
-    struct Bus {
-        std::string name;
-        std::vector<Stop*> stops;
-    };
 
     std::deque<Stop> stops;
     std::unordered_map<std::string_view, Stop*> stopname_to_stop;
@@ -89,12 +44,6 @@ private:
     std::unordered_map<std::pair<Stop*, Stop*>, int, DoublePointerHasher> distances;
 
 };
-
-}
-
-namespace tests {
-
-void TestTransportCatalogue();
 
 }
 

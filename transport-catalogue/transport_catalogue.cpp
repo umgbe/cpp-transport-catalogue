@@ -1,6 +1,4 @@
 #include "transport_catalogue.h"
-#include "input_reader.h"
-#include "stat_reader.h"
 #include "geo.h"
 
 #include <sstream>
@@ -10,7 +8,7 @@
 using namespace transportCatalogue;
 using namespace transportCatalogue::base;
 
-void TransportCatalogue::AddStop(const requestsToBase::StopInfo& r) {
+void TransportCatalogue::AddStop(const requestsToFill::StopInfo& r) {
     Stop* ptr;
     if (!stopname_to_stop.count(r.name)) {
         stops.push_back({r.name, r.latitude, r.longitude});
@@ -38,12 +36,13 @@ void TransportCatalogue::AddStop(const requestsToBase::StopInfo& r) {
     }
 }
 
-void TransportCatalogue::AddBus(const requestsToBase::BusInfo& r) {
+void TransportCatalogue::AddBus(const requestsToFill::BusInfo& r) {
     Bus new_bus;
     new_bus.name = r.name;
     for (const std::string& stop_name : r.stops_names) {
         new_bus.stops.push_back(stopname_to_stop[stop_name]);
     }
+    new_bus.roundtrip = r.roundtrip;
     buses.push_back(std::move(new_bus));
     Bus* ptr = &buses.back();
     for (const std::string& stop_name : r.stops_names) {
@@ -52,14 +51,15 @@ void TransportCatalogue::AddBus(const requestsToBase::BusInfo& r) {
     busname_to_bus.insert({buses.back().name, ptr});
 }
 
-requestsFromBase::BusInfo TransportCatalogue::GetBus(const requestsToBase::BusInfo& r) {
-    requestsFromBase::BusInfo result;
+answersFromBase::BusInfo TransportCatalogue::GetBus(const requestsToSearch::BusInfo& r) {
+    answersFromBase::BusInfo result;
+    result.id = r.id;
     result.name = r.name;
     if (!busname_to_bus.count(r.name)) {
-        result.bus_found = false;
+        result.no_bus = true;
         return result;
     }
-    result.bus_found = true;
+    result.no_bus = false;
     Bus* ptr = busname_to_bus[r.name];
     result.stops_count = ptr->stops.size();
 
@@ -74,7 +74,7 @@ requestsFromBase::BusInfo TransportCatalogue::GetBus(const requestsToBase::BusIn
 
     for (size_t i = 1; i < ptr->stops.size(); ++i) {
         result.distance += distances[{ptr->stops[i-1], ptr->stops[i]}];
-        geo_distance += ComputeDistance({ptr->stops[i-1]->latitude, ptr->stops[i-1]->longitude}, {ptr->stops[i]->latitude, ptr->stops[i]->longitude});
+        geo_distance += geo::ComputeDistance({ptr->stops[i-1]->latitude, ptr->stops[i-1]->longitude}, {ptr->stops[i]->latitude, ptr->stops[i]->longitude});
     }
 
     result.curvature = result.distance / geo_distance;
@@ -82,8 +82,9 @@ requestsFromBase::BusInfo TransportCatalogue::GetBus(const requestsToBase::BusIn
     return result;
 }
 
-requestsFromBase::StopInfo TransportCatalogue::GetStop(const requestsToBase::StopInfo& r) {
-    requestsFromBase::StopInfo result;
+answersFromBase::StopInfo TransportCatalogue::GetStop(const requestsToSearch::StopInfo& r) {
+    answersFromBase::StopInfo result;
+    result.id = r.id;
     result.name = r.name;
     if (!stopname_to_stop.count(r.name)) {
         result.no_stop = true;
@@ -99,69 +100,4 @@ requestsFromBase::StopInfo TransportCatalogue::GetStop(const requestsToBase::Sto
     }
     result.no_buses = false;
     return result;
-}
-
-using namespace transportCatalogue::fill;
-
-void tests::TestTransportCatalogue() {
-    /*std::istringstream test {
-        "13\n"
-        "Stop Tolstopaltsevo: 55.611087, 37.208290\n"
-        "Stop Marushkino: 55.595884, 37.209755\n"
-        "Bus 256: Biryulyovo Zapadnoye > Biryusinka > Universam > Biryulyovo Tovarnaya > Biryulyovo Passazhirskaya > Biryulyovo Zapadnoye\n"
-        "Bus 750: Tolstopaltsevo - Marushkino - Rasskazovka\n"
-        "Stop Rasskazovka: 55.632761, 37.333324\n"
-        "Stop Biryulyovo Zapadnoye: 55.574371, 37.651700\n"
-        "Stop Biryusinka: 55.581065, 37.648390\n"
-        "Stop Universam: 55.587655, 37.645687\n"
-        "Stop Biryulyovo Tovarnaya: 55.592028, 37.653656\n"
-        "Stop Biryulyovo Passazhirskaya: 55.580999, 37.659164\n"
-        "Bus 828: Biryulyovo Zapadnoye > Universam > Rossoshanskaya ulitsa > Biryulyovo Zapadnoye\n"
-        "Stop Rossoshanskaya ulitsa: 55.595579, 37.605757\n"
-        "Stop Prazhskaya: 55.611678, 37.603831}\n"};
-
-    TransportReader tr(test);
-    TransportCatalogue tc;
-
-    while (tr.GetStopsCount() > 0) {
-        tc.AddStop(tr.GetNextStop());
-    }
-    while (tr.GetBusesCount() > 0) {
-        tc.AddBus(tr.GetNextBus());
-    }
-    
-    requestsFromBase::GetBus testbus = tc.GetBus({"256"});
-
-    assert(testbus.bus_found == true);
-    assert(testbus.name == "256");
-    assert(testbus.stops_count == 6);
-    assert(testbus.unique_stops_count == 5);
-
-    testbus = tc.GetBus({"750"});
-
-    assert(testbus.bus_found == true);
-    assert(testbus.name == "750");
-    assert(testbus.stops_count == 5);
-    assert(testbus.unique_stops_count == 3);
-
-    testbus = tc.GetBus({"751"});
-
-    assert(testbus.bus_found == false);
-
-    requestsFromBase::GetStop teststop = tc.GetStop({"Samara"});
-
-    assert(teststop.no_stop == true);
-
-    teststop = tc.GetStop({"Prazhskaya"});
-
-    assert(teststop.no_stop == false);
-    assert(teststop.no_buses == true);
-
-    teststop = tc.GetStop({"Biryulyovo Zapadnoye"});
-
-    assert(teststop.no_stop == false);
-    assert(teststop.no_buses == false);
-    assert(teststop.buses == std::set<std::string>({"256", "828"}));
-    */
-
 }
