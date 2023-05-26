@@ -15,7 +15,7 @@ namespace requestsProcessing {
 
 using fillInfo = std::variant<requestsToFill::StopInfo, requestsToFill::BusInfo>;
 using searchInfo = std::variant<requestsToSearch::StopInfo, requestsToSearch::BusInfo, mapRenderer::requestToMapRenderer>;
-using answerInfo = std::variant<answersFromBase::StopInfo, answersFromBase::BusInfo, mapRenderer::answerFromMapRenderer>;
+using answerInfo = std::variant<answersFromBase::StopInfo, answersFromBase::BusInfo, mapRenderer::MapRendererResponse>;
 
 class InterfaceIn {
 

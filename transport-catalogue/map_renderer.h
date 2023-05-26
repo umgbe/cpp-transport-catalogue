@@ -17,9 +17,19 @@ public:
     void AddStop(const requestsToFill::StopInfo& r);
     void AddBus(const requestsToFill::BusInfo& r);
     void SetRenderSettings(const RenderSettings& rs);
-    answerFromMapRenderer BuildMap(const requestToMapRenderer& r);
+
+    MapRendererResponse GetMap(const requestToMapRenderer& r);
 
 private:
+
+    class SphereProjector;
+
+    svg::Document BuildMap();
+    SphereProjector BuildSphereProjector();
+    void AddLines(svg::Document& document, const SphereProjector& proj);
+    void AddLineNames(svg::Document& document, const SphereProjector& proj);
+    void AddStationCircles(svg::Document& document, const SphereProjector& proj);
+    void AddStationNames(svg::Document& document, const SphereProjector& proj);
 
     std::deque<Stop> stops;
     std::map<std::string_view, Stop*> stopname_to_stop;

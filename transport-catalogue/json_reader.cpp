@@ -173,8 +173,8 @@ void JsonWriter::PrintAllAnswers() {
                 answer.insert({"stop_count"s, data.stops_count});
                 answer.insert({"unique_stop_count"s, data.unique_stops_count});
             }
-        } else if (std::holds_alternative<mapRenderer::answerFromMapRenderer>(answers.front())) {
-            mapRenderer::answerFromMapRenderer data = std::get<mapRenderer::answerFromMapRenderer>(std::move(answers.front()));
+        } else if (std::holds_alternative<mapRenderer::MapRendererResponse>(answers.front())) {
+            mapRenderer::MapRendererResponse data = std::get<mapRenderer::MapRendererResponse>(std::move(answers.front()));
             answers.pop_front();
             answer.insert({"request_id"s, Node(data.id)});
             answer.insert({"map"s, std::move(data.map)});

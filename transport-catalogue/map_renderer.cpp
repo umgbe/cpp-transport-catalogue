@@ -40,12 +40,19 @@ void MapRenderer::SetRenderSettings(const RenderSettings& rs) {
     render_settings = rs;
 }
 
+MapRendererResponse MapRenderer::GetMap(const requestToMapRenderer& r) {
+    svg::Document document = BuildMap();
+    std::ostringstream result;
+    document.Render(result);
+    return {r.id, result.str()};    
+}
+
 inline const double EPSILON = 1e-6;
 bool IsZero(double value) {
     return std::abs(value) < EPSILON;
 }
 
-class SphereProjector {
+class MapRenderer::SphereProjector {
 public:
     // points_begin и points_end задают начало и конец интервала элементов geo::Coordinates
     template <typename PointInputIt>
@@ -112,8 +119,17 @@ private:
     double zoom_coeff_ = 0;
 };
 
-answerFromMapRenderer MapRenderer::BuildMap(const requestToMapRenderer& r) {
+svg::Document MapRenderer::BuildMap() {
     svg::Document document;
+    const MapRenderer::SphereProjector proj = BuildSphereProjector();   
+    AddLines(document, proj);
+    AddLineNames(document, proj);
+    AddStationCircles(document, proj);
+    AddStationNames(document, proj);
+    return document;
+}
+
+MapRenderer::SphereProjector MapRenderer::BuildSphereProjector() {
     std::vector<geo::Coordinates> all_coordinates;
     all_coordinates.reserve(stops.size());
     for (const auto [stop, buses] : stops_to_buses) {
@@ -121,7 +137,11 @@ answerFromMapRenderer MapRenderer::BuildMap(const requestToMapRenderer& r) {
             all_coordinates.push_back({stop->latitude, stop->longitude});
         }
     }
-    const SphereProjector proj{all_coordinates.begin(), all_coordinates.end(), render_settings.width, render_settings.height, render_settings.padding};    
+    SphereProjector proj{all_coordinates.begin(), all_coordinates.end(), render_settings.width, render_settings.height, render_settings.padding};
+    return proj;
+}
+
+void MapRenderer::AddLines(svg::Document& document, const SphereProjector& proj) {
     size_t color_index = 0;
     for (const auto [busname, bus] : busname_to_bus) {        
         if (bus->stops.empty()) {
@@ -140,7 +160,10 @@ answerFromMapRenderer MapRenderer::BuildMap(const requestToMapRenderer& r) {
         }
         document.Add(std::move(line));
     }
-    color_index = 0;
+}
+
+void MapRenderer::AddLineNames(svg::Document& document, const SphereProjector& proj) {
+    size_t color_index = 0;
     for (const auto [busname, bus] : busname_to_bus) {
         if (bus->stops.empty()) {
             continue;
@@ -172,6 +195,9 @@ answerFromMapRenderer MapRenderer::BuildMap(const requestToMapRenderer& r) {
             ++color_index;
         }
     }
+}
+
+void MapRenderer::AddStationCircles(svg::Document& document, const SphereProjector& proj) {
     for (const auto [stopname, stop] : stopname_to_stop) {
         if (stops_to_buses[stop].empty()) {
             continue;
@@ -180,6 +206,9 @@ answerFromMapRenderer MapRenderer::BuildMap(const requestToMapRenderer& r) {
         circle.SetCenter(proj({stop->latitude, stop->longitude})).SetRadius(render_settings.stop_radius).SetFillColor("white"s);
         document.Add(circle);
     }
+}
+
+void MapRenderer::AddStationNames(svg::Document& document, const SphereProjector& proj) {
     for (const auto [stopname, stop] : stopname_to_stop) {
         if (stops_to_buses[stop].empty()) {
             continue;
@@ -196,8 +225,4 @@ answerFromMapRenderer MapRenderer::BuildMap(const requestToMapRenderer& r) {
         document.Add(std::move(underline_text));
         document.Add(std::move(text));
     }
-
-    std::ostringstream result;
-    document.Render(result);
-    return {r.id, result.str()};
 }

@@ -53,7 +53,7 @@ void RequestHandler::Search(base::TransportCatalogue& tc, mapRenderer::MapRender
             out.AddRequestAnswer(tc.GetBus(std::get<requestsToSearch::BusInfo>(std::move(search_requests.front()))));
             search_requests.pop_front();
         } else if (std::holds_alternative<mapRenderer::requestToMapRenderer>(search_requests.front())) {
-            out.AddRequestAnswer(mr.BuildMap(std::get<mapRenderer::requestToMapRenderer>(std::move(search_requests.front()))));
+            out.AddRequestAnswer(mr.GetMap(std::get<mapRenderer::requestToMapRenderer>(std::move(search_requests.front()))));
             search_requests.pop_front();
         }
     }

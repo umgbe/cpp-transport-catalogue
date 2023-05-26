@@ -97,7 +97,7 @@ namespace mapRenderer {
         int id;
     };
 
-    struct answerFromMapRenderer {
+    struct MapRendererResponse {
         int id;
         std::string map;
     };
