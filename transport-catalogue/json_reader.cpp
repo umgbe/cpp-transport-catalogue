@@ -1,5 +1,6 @@
 #include "json_reader.h"
 #include "json.h"
+#include "json_builder.h"
 
 using namespace transportCatalogue;
 using namespace transportCatalogue::requestsProcessing;
@@ -8,18 +9,18 @@ using namespace std::string_literals;
 
 JsonReader::JsonReader(std::istream& in) {
     const Document data = json::Load(in);
-    const Dict& all_requests = data.GetRoot().AsMap();
+    const Dict& all_requests = data.GetRoot().AsDict();
     const Array& base_requests = all_requests.at("base_requests"s).AsArray();
     const Array& stat_requests = all_requests.at("stat_requests"s).AsArray();
-    const Dict& render = all_requests.at("render_settings"s).AsMap();
+    const Dict& render = all_requests.at("render_settings"s).AsDict();
     for (const Node& node : base_requests) {
-        const Dict& request = node.AsMap();
+        const Dict& request = node.AsDict();
         if (request.at("type"s).AsString() == "Stop"s) {
             requestsToFill::StopInfo result;
             result.name = request.at("name"s).AsString();
             result.latitude = request.at("latitude"s).AsDouble();
             result.longitude = request.at("longitude"s).AsDouble();
-            const Dict& road_distances = request.at("road_distances").AsMap();
+            const Dict& road_distances = request.at("road_distances").AsDict();
             for (const auto [stopname, dist] : road_distances) {
                 result.distances.insert({stopname, dist.AsInt()});
             }
@@ -47,7 +48,7 @@ JsonReader::JsonReader(std::istream& in) {
         }
     }
     for (const Node& node : stat_requests) {
-        const Dict& request = node.AsMap();
+        const Dict& request = node.AsDict();
         if (request.at("type").AsString() == "Stop"s) {
             requestsToSearch::StopInfo result;
             result.name = request.at("name"s).AsString();
@@ -143,46 +144,45 @@ void JsonWriter::AddRequestAnswer(const answerInfo& answer) {
 }
 
 void JsonWriter::PrintAllAnswers() {
-    Array all_answers;
-    all_answers.reserve(answers.size());
+    json::Builder builder;
+    builder.StartArray();
     while (!answers.empty()) {
-        Dict answer;
+        builder.StartDict();
         if (std::holds_alternative<answersFromBase::StopInfo>(answers.front())) {
             answersFromBase::StopInfo data = std::get<answersFromBase::StopInfo>(std::move(answers.front()));
             answers.pop_front();
-            answer.insert({"request_id"s, Node(data.id)});
+            builder.Key("request_id"s).Value(data.id);
             if (data.no_stop) {
-                answer.insert({"error_message"s, Node("not found"s)});
+                builder.Key("error_message"s).Value("not found"s);
             } else {
-                Array buses;
-                buses.reserve(data.buses.size());
+                builder.Key("buses"s).StartArray();
                 for (std::string s : data.buses) {
-                    buses.push_back(Node(std::move(s)));
+                    builder.Value(std::move(s));
                 }
-                answer.insert({"buses"s, std::move(buses)});
+                builder.EndArray();
             }
         } else if (std::holds_alternative<answersFromBase::BusInfo>(answers.front())) {
             answersFromBase::BusInfo data = std::get<answersFromBase::BusInfo>(std::move(answers.front()));
             answers.pop_front();
-            answer.insert({"request_id"s, Node(data.id)});
+            builder.Key("request_id"s).Value(data.id);
             if (data.no_bus) {
-                answer.insert({"error_message"s, Node("not found"s)});
+                builder.Key("error_message"s).Value("not found"s);
             } else {
-                answer.insert({"curvature"s, data.curvature});
-                answer.insert({"route_length"s, data.distance});
-                answer.insert({"stop_count"s, data.stops_count});
-                answer.insert({"unique_stop_count"s, data.unique_stops_count});
+                builder.Key("curvature"s).Value(data.curvature);
+                builder.Key("route_length"s).Value(data.distance);
+                builder.Key("stop_count"s).Value(data.stops_count);
+                builder.Key("unique_stop_count"s).Value(data.unique_stops_count);
             }
         } else if (std::holds_alternative<mapRenderer::MapRendererResponse>(answers.front())) {
             mapRenderer::MapRendererResponse data = std::get<mapRenderer::MapRendererResponse>(std::move(answers.front()));
             answers.pop_front();
-            answer.insert({"request_id"s, Node(data.id)});
-            answer.insert({"map"s, std::move(data.map)});
+            builder.Key("request_id"s).Value(data.id);
+            builder.Key("map"s).Value(std::move(data.map));
         } else {
             throw std::logic_error("неизвестный тип ответа"s);
         }
-        all_answers.push_back(std::move(answer));
+        builder.EndDict();
     }
-    Document d(std::move(all_answers));
-    json::Print(d, out_);
+    builder.EndArray();
+    json::Print(Document(builder.Build()), out_);
 }
