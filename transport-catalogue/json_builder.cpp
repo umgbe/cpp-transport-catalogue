@@ -185,21 +185,14 @@ Node ItemContext::Build() {
     return b.Build();
 }
 
-ValueAfterKeyContext KeyItemContext::Value(Node::Value val) {
+DictItemContext KeyItemContext::Value(Node::Value val) {
     b.Value(val);
-    ValueAfterKeyContext v(b);
+    DictItemContext v(b);
     return v;
 }
 
-ValueAfterArrayContext ArrayItemContext::Value(Node::Value val) {
+ArrayItemContext ArrayItemContext::Value(Node::Value val) {
     b.Value(val);
-    ValueAfterArrayContext v(b);
+    ArrayItemContext v(b);
     return v;
 }
-
-ValueAfterArrayContext ValueAfterArrayContext::Value(Node::Value val) {
-    b.Value(val);
-    ValueAfterArrayContext v(b);
-    return v;
-}
-

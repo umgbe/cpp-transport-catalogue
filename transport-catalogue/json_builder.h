@@ -8,8 +8,6 @@ class ItemContext;
 class KeyItemContext;
 class DictItemContext;
 class ArrayItemContext;
-class ValueAfterKeyContext;
-class ValueAfterArrayContext;
 
 class Builder {
 
@@ -91,21 +89,7 @@ public:
     Builder& EndArray() = delete;
     Node Build() = delete;
 
-    ValueAfterKeyContext Value(Node::Value val);
-
-};
-
-class ValueAfterKeyContext : public ItemContext {
-
-public:
-
-    ValueAfterKeyContext(Builder& builder) : ItemContext(builder) {}
-
-    Builder& Value(Node::Value val) = delete;
-    DictItemContext StartDict() = delete;
-    ArrayItemContext StartArray() = delete;
-    Builder& EndArray() = delete;
-    Node Build() = delete;
+    DictItemContext Value(Node::Value val);
 
 };
 
@@ -119,21 +103,7 @@ public :
     Builder& EndDict() = delete;
     Node Build() = delete;
 
-    ValueAfterArrayContext Value(Node::Value val);
-
-};
-
-class ValueAfterArrayContext : public ItemContext {
-
-public:
-
-    ValueAfterArrayContext(Builder& builder) : ItemContext(builder) {}
-
-    KeyItemContext Key(std::string s) = delete;
-    Builder& EndDict() = delete;
-    Node Build() = delete;
-
-    ValueAfterArrayContext Value(Node::Value val);
+    ArrayItemContext Value(Node::Value val);
 
 };
 
