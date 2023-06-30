@@ -13,7 +13,8 @@ void RequestHandler::GetRequests(InterfaceIn& in) {
     while (in.GetSearchRequestsCount() > 0) {
         search_requests.push_back(in.GetNextSearchRequest());
     }
-    render_settings = in.GetRenderSettings();    
+    render_settings = in.GetRenderSettings();
+    routing_settings = in.GetRoutingSettings();    
 }
 
 void RequestHandler::Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr) {
@@ -31,6 +32,7 @@ void RequestHandler::Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer
             throw std::logic_error("неизвестный тип заполняющего запроса"s);
         }
     }
+    tc.AddRoutingSettings(routing_settings);
     while (!stops.empty()) {
         tc.AddStop(stops.front());
         mr.AddStop(stops.front());
@@ -42,6 +44,7 @@ void RequestHandler::Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer
         buses.pop_front();
     }
     mr.SetRenderSettings(render_settings);
+    tc.BuildGraph();
 }
 
 void RequestHandler::Search(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, InterfaceOut& out) {
@@ -54,6 +57,9 @@ void RequestHandler::Search(base::TransportCatalogue& tc, mapRenderer::MapRender
             search_requests.pop_front();
         } else if (std::holds_alternative<mapRenderer::requestToMapRenderer>(search_requests.front())) {
             out.AddRequestAnswer(mr.GetMap(std::get<mapRenderer::requestToMapRenderer>(std::move(search_requests.front()))));
+            search_requests.pop_front();
+        } else if (std::holds_alternative<requestsToSearch::RouteInfo>(search_requests.front())) {
+            out.AddRequestAnswer(tc.GetRoute(std::get<requestsToSearch::RouteInfo>(std::move(search_requests.front()))));
             search_requests.pop_front();
         }
     }

@@ -50,7 +50,19 @@ struct BusInfo {
     std::string name;
 };
 
+struct RouteInfo {
+    int id;
+    std::string from;
+    std::string to;
+
+};
+
 }
+
+struct RoutingSettings {
+    int bus_wait_time;
+    double bus_velocity;
+};
 
 namespace answersFromBase {
 
@@ -70,6 +82,26 @@ struct StopInfo {
     std::string name;
     std::set<std::string> buses;
     int id;
+};
+
+struct RouteInfo {
+    int id;
+    bool no_route;
+    double total_time;
+
+    struct Wait {
+        std::string stop_name;
+        double time;
+    };
+
+    struct Bus {
+        std::string bus_name;
+        int span_count;
+        double time;
+    };
+
+    std::vector<std::variant<Wait, Bus>> items; 
+
 };
 
 }

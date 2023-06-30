@@ -13,6 +13,7 @@ JsonReader::JsonReader(std::istream& in) {
     const Array& base_requests = all_requests.at("base_requests"s).AsArray();
     const Array& stat_requests = all_requests.at("stat_requests"s).AsArray();
     const Dict& render = all_requests.at("render_settings"s).AsDict();
+    const Dict& routing = all_requests.at("routing_settings"s).AsDict();
     for (const Node& node : base_requests) {
         const Dict& request = node.AsDict();
         if (request.at("type"s).AsString() == "Stop"s) {
@@ -63,6 +64,12 @@ JsonReader::JsonReader(std::istream& in) {
             mapRenderer::requestToMapRenderer result;
             result.id = request.at("id"s).AsInt();
             search_requests.push_back(std::move(result));
+        }  else if (request.at("type"s).AsString() == "Route"s) {
+            requestsToSearch::RouteInfo result;
+            result.id = request.at("id"s).AsInt();
+            result.from = request.at("from"s).AsString();
+            result.to = request.at("to"s).AsString();
+            search_requests.push_back(std::move(result));
         } else {
             throw std::logic_error("неизвестный тип запроса"s);
         }
@@ -110,6 +117,7 @@ JsonReader::JsonReader(std::istream& in) {
             }
         }
     }
+    routing_settings = {routing.at("bus_wait_time"s).AsInt(), routing.at("bus_velocity").AsDouble()};
 }
 
 int JsonReader::GetFillRequestsCount() const {
@@ -134,6 +142,10 @@ searchInfo JsonReader::GetNextSearchRequest() {
 
 mapRenderer::RenderSettings JsonReader::GetRenderSettings() {
     return std::move(render_settings);
+}
+
+RoutingSettings JsonReader::GetRoutingSettings() {
+    return routing_settings;
 }
 
 JsonWriter::JsonWriter(std::ostream& out) 
@@ -178,6 +190,33 @@ void JsonWriter::PrintAllAnswers() {
             answers.pop_front();
             builder.Key("request_id"s).Value(data.id);
             builder.Key("map"s).Value(std::move(data.map));
+        } else if (std::holds_alternative<answersFromBase::RouteInfo>(answers.front())) {
+            answersFromBase::RouteInfo data = std::get<answersFromBase::RouteInfo>(std::move(answers.front()));
+            answers.pop_front();
+            builder.Key("request_id"s).Value(data.id);
+            if (data.no_route) {
+                builder.Key("error_message"s).Value("not found"s);
+            } else {
+                builder.Key("total_time"s).Value(data.total_time);
+                builder.Key("items"s).StartArray();
+                for (std::variant<answersFromBase::RouteInfo::Wait, answersFromBase::RouteInfo::Bus>& item : data.items) {
+                    builder.StartDict();
+                    if (std::holds_alternative<answersFromBase::RouteInfo::Wait>(item)) {
+                        answersFromBase::RouteInfo::Wait item_data = std::get<answersFromBase::RouteInfo::Wait>(std::move(item));
+                        builder.Key("type"s).Value("Wait"s);
+                        builder.Key("stop_name"s).Value(item_data.stop_name);
+                        builder.Key("time"s).Value(item_data.time);
+                    } else if (std::holds_alternative<answersFromBase::RouteInfo::Bus>(item)) {
+                        answersFromBase::RouteInfo::Bus item_data = std::get<answersFromBase::RouteInfo::Bus>(std::move(item));
+                        builder.Key("type"s).Value("Bus"s);
+                        builder.Key("bus"s).Value(item_data.bus_name);
+                        builder.Key("span_count"s).Value(item_data.span_count);
+                        builder.Key("time"s).Value(item_data.time);
+                    }
+                    builder.EndDict();
+                }
+                builder.EndArray();
+            }
         } else {
             throw std::logic_error("неизвестный тип ответа"s);
         }

@@ -20,11 +20,14 @@ public:
 
     mapRenderer::RenderSettings GetRenderSettings() override;
 
+    RoutingSettings GetRoutingSettings() override;
+
 private:
 
     std::deque<fillInfo> fill_requests;
     std::deque<searchInfo> search_requests;
-    mapRenderer::RenderSettings render_settings; 
+    mapRenderer::RenderSettings render_settings;
+    RoutingSettings routing_settings; 
 
 };
 

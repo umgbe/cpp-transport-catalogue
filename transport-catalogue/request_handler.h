@@ -13,9 +13,16 @@ namespace transportCatalogue {
 
 namespace requestsProcessing {
 
-using fillInfo = std::variant<requestsToFill::StopInfo, requestsToFill::BusInfo>;
-using searchInfo = std::variant<requestsToSearch::StopInfo, requestsToSearch::BusInfo, mapRenderer::requestToMapRenderer>;
-using answerInfo = std::variant<answersFromBase::StopInfo, answersFromBase::BusInfo, mapRenderer::MapRendererResponse>;
+using fillInfo = std::variant<  requestsToFill::StopInfo, 
+                                requestsToFill::BusInfo>;
+using searchInfo = std::variant<requestsToSearch::StopInfo, 
+                                requestsToSearch::BusInfo, 
+                                mapRenderer::requestToMapRenderer, 
+                                requestsToSearch::RouteInfo>;
+using answerInfo = std::variant<answersFromBase::StopInfo, 
+                                answersFromBase::BusInfo, 
+                                mapRenderer::MapRendererResponse,
+                                answersFromBase::RouteInfo>;
 
 class InterfaceIn {
 
@@ -28,6 +35,8 @@ public:
     virtual searchInfo GetNextSearchRequest() = 0;
 
     virtual mapRenderer::RenderSettings GetRenderSettings() = 0;
+
+    virtual RoutingSettings GetRoutingSettings() = 0;
 
 };
 
@@ -57,6 +66,8 @@ private:
     std::deque<fillInfo> fill_requests;
     std::deque<searchInfo> search_requests;
     mapRenderer::RenderSettings render_settings;
+    RoutingSettings routing_settings;
+
 };
 
 }
