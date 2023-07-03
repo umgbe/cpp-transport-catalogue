@@ -65,7 +65,7 @@ JsonReader::JsonReader(std::istream& in) {
             result.id = request.at("id"s).AsInt();
             search_requests.push_back(std::move(result));
         }  else if (request.at("type"s).AsString() == "Route"s) {
-            requestsToSearch::RouteInfo result;
+            transportRouter::requestToRouter result;
             result.id = request.at("id"s).AsInt();
             result.from = request.at("from"s).AsString();
             result.to = request.at("to"s).AsString();
@@ -144,7 +144,7 @@ mapRenderer::RenderSettings JsonReader::GetRenderSettings() {
     return std::move(render_settings);
 }
 
-RoutingSettings JsonReader::GetRoutingSettings() {
+transportRouter::RoutingSettings JsonReader::GetRoutingSettings() {
     return routing_settings;
 }
 
@@ -190,8 +190,8 @@ void JsonWriter::PrintAllAnswers() {
             answers.pop_front();
             builder.Key("request_id"s).Value(data.id);
             builder.Key("map"s).Value(std::move(data.map));
-        } else if (std::holds_alternative<answersFromBase::RouteInfo>(answers.front())) {
-            answersFromBase::RouteInfo data = std::get<answersFromBase::RouteInfo>(std::move(answers.front()));
+        } else if (std::holds_alternative<transportRouter::RouterResponce>(answers.front())) {
+            transportRouter::RouterResponce data = std::get<transportRouter::RouterResponce>(std::move(answers.front()));
             answers.pop_front();
             builder.Key("request_id"s).Value(data.id);
             if (data.no_route) {
@@ -199,15 +199,15 @@ void JsonWriter::PrintAllAnswers() {
             } else {
                 builder.Key("total_time"s).Value(data.total_time);
                 builder.Key("items"s).StartArray();
-                for (std::variant<answersFromBase::RouteInfo::Wait, answersFromBase::RouteInfo::Bus>& item : data.items) {
+                for (std::variant<transportRouter::RouterResponce::Wait, transportRouter::RouterResponce::Bus>& item : data.items) {
                     builder.StartDict();
-                    if (std::holds_alternative<answersFromBase::RouteInfo::Wait>(item)) {
-                        answersFromBase::RouteInfo::Wait item_data = std::get<answersFromBase::RouteInfo::Wait>(std::move(item));
+                    if (std::holds_alternative<transportRouter::RouterResponce::Wait>(item)) {
+                        transportRouter::RouterResponce::Wait item_data = std::get<transportRouter::RouterResponce::Wait>(std::move(item));
                         builder.Key("type"s).Value("Wait"s);
                         builder.Key("stop_name"s).Value(item_data.stop_name);
                         builder.Key("time"s).Value(item_data.time);
-                    } else if (std::holds_alternative<answersFromBase::RouteInfo::Bus>(item)) {
-                        answersFromBase::RouteInfo::Bus item_data = std::get<answersFromBase::RouteInfo::Bus>(std::move(item));
+                    } else if (std::holds_alternative<transportRouter::RouterResponce::Bus>(item)) {
+                        transportRouter::RouterResponce::Bus item_data = std::get<transportRouter::RouterResponce::Bus>(std::move(item));
                         builder.Key("type"s).Value("Bus"s);
                         builder.Key("bus"s).Value(item_data.bus_name);
                         builder.Key("span_count"s).Value(item_data.span_count);

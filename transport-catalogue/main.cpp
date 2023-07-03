@@ -8,22 +8,24 @@ void FileTest() {
     std::ofstream out("output.txt");
     transportCatalogue::base::TransportCatalogue tc;
     transportCatalogue::requestsProcessing::RequestHandler rh;
-    mapRenderer::MapRenderer mr;
+    mapRenderer::MapRenderer mr(tc);
+    transportRouter::TransportRouter tr(tc);
     transportCatalogue::requestsProcessing::JsonReader jr(in);
     transportCatalogue::requestsProcessing::JsonWriter jw(out);
     rh.GetRequests(jr);
-    rh.Fill(tc, mr);
-    rh.Search(tc, mr, jw);
+    rh.Fill(tc, mr, tr);
+    rh.Search(tc, mr, tr, jw);
 }
 
 int main() {
     //FileTest();
     transportCatalogue::base::TransportCatalogue tc;
     transportCatalogue::requestsProcessing::RequestHandler rh;
-    mapRenderer::MapRenderer mr;
+    mapRenderer::MapRenderer mr(tc);
+    transportRouter::TransportRouter tr(tc);
     transportCatalogue::requestsProcessing::JsonReader jr(std::cin);
     transportCatalogue::requestsProcessing::JsonWriter jw(std::cout);
     rh.GetRequests(jr);
-    rh.Fill(tc, mr);
-    rh.Search(tc, mr, jw);
+    rh.Fill(tc, mr, tr);
+    rh.Search(tc, mr, tr, jw);
 }

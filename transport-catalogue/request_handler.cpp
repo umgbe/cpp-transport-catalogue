@@ -17,7 +17,7 @@ void RequestHandler::GetRequests(InterfaceIn& in) {
     routing_settings = in.GetRoutingSettings();    
 }
 
-void RequestHandler::Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr) {
+void RequestHandler::Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr) {
     std::deque<requestsToFill::StopInfo> stops;
     std::deque<requestsToFill::BusInfo> buses;
     while (!fill_requests.empty()) {
@@ -32,22 +32,20 @@ void RequestHandler::Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer
             throw std::logic_error("неизвестный тип заполняющего запроса"s);
         }
     }
-    tc.AddRoutingSettings(routing_settings);
     while (!stops.empty()) {
         tc.AddStop(stops.front());
-        mr.AddStop(stops.front());
         stops.pop_front();
     }
     while (!buses.empty()) {
         tc.AddBus(buses.front());
-        mr.AddBus(buses.front());
         buses.pop_front();
     }
     mr.SetRenderSettings(render_settings);
-    tc.BuildGraph();
+    tr.SetRoutingSettings(routing_settings);
+    tr.BuildGraph();
 }
 
-void RequestHandler::Search(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, InterfaceOut& out) {
+void RequestHandler::Search(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr, InterfaceOut& out) {
     while (!search_requests.empty()) {
         if (std::holds_alternative<requestsToSearch::StopInfo>(search_requests.front())) {
             out.AddRequestAnswer(tc.GetStop(std::get<requestsToSearch::StopInfo>(std::move(search_requests.front()))));
@@ -58,8 +56,8 @@ void RequestHandler::Search(base::TransportCatalogue& tc, mapRenderer::MapRender
         } else if (std::holds_alternative<mapRenderer::requestToMapRenderer>(search_requests.front())) {
             out.AddRequestAnswer(mr.GetMap(std::get<mapRenderer::requestToMapRenderer>(std::move(search_requests.front()))));
             search_requests.pop_front();
-        } else if (std::holds_alternative<requestsToSearch::RouteInfo>(search_requests.front())) {
-            out.AddRequestAnswer(tc.GetRoute(std::get<requestsToSearch::RouteInfo>(std::move(search_requests.front()))));
+        } else if (std::holds_alternative<transportRouter::requestToRouter>(search_requests.front())) {
+            out.AddRequestAnswer(tr.GetRoute(std::get<transportRouter::requestToRouter>(std::move(search_requests.front()))));
             search_requests.pop_front();
         }
     }

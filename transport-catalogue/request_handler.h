@@ -8,6 +8,7 @@
 
 #include "transport_catalogue.h"
 #include "map_renderer.h"
+#include "transport_router.h"
 
 namespace transportCatalogue {
 
@@ -18,11 +19,11 @@ using fillInfo = std::variant<  requestsToFill::StopInfo,
 using searchInfo = std::variant<requestsToSearch::StopInfo, 
                                 requestsToSearch::BusInfo, 
                                 mapRenderer::requestToMapRenderer, 
-                                requestsToSearch::RouteInfo>;
+                                transportRouter::requestToRouter>;
 using answerInfo = std::variant<answersFromBase::StopInfo, 
                                 answersFromBase::BusInfo, 
                                 mapRenderer::MapRendererResponse,
-                                answersFromBase::RouteInfo>;
+                                transportRouter::RouterResponce>;
 
 class InterfaceIn {
 
@@ -36,7 +37,7 @@ public:
 
     virtual mapRenderer::RenderSettings GetRenderSettings() = 0;
 
-    virtual RoutingSettings GetRoutingSettings() = 0;
+    virtual transportRouter::RoutingSettings GetRoutingSettings() = 0;
 
 };
 
@@ -57,16 +58,16 @@ public:
 
     void GetRequests(InterfaceIn& in);
 
-    void Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr);
+    void Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr);
 
-    void Search(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, InterfaceOut& out);
+    void Search(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr, InterfaceOut& out);
 
 private:
 
     std::deque<fillInfo> fill_requests;
     std::deque<searchInfo> search_requests;
     mapRenderer::RenderSettings render_settings;
-    RoutingSettings routing_settings;
+    transportRouter::RoutingSettings routing_settings;
 
 };
 

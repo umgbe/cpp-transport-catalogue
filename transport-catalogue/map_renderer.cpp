@@ -13,28 +13,8 @@
 using namespace mapRenderer;
 using namespace std::string_literals;
 
-void MapRenderer::AddStop(const requestsToFill::StopInfo& r) {
-    Stop* ptr;
-    stops.push_back({r.name, r.latitude, r.longitude});
-    ptr = &stops.back();
-    stopname_to_stop.insert({stops.back().name, ptr});
-    stops_to_buses.insert({ptr, std::vector<Bus*>()});
-}
-
-void MapRenderer::AddBus(const requestsToFill::BusInfo& r) {
-    Bus new_bus;
-    new_bus.name = r.name;
-    for (const std::string& stop_name : r.stops_names) {
-        new_bus.stops.push_back(stopname_to_stop[stop_name]);
-    }
-    new_bus.roundtrip = r.roundtrip;
-    buses.push_back(std::move(new_bus));
-    Bus* ptr = &buses.back();
-    for (const std::string& stop_name : r.stops_names) {
-        stops_to_buses[stopname_to_stop[stop_name]].push_back(ptr);
-    }
-    busname_to_bus.insert({buses.back().name, ptr});
-}
+MapRenderer::MapRenderer(const transportCatalogue::base::TransportCatalogue& transport_catalogue)
+    : tc(transport_catalogue) {}
 
 void MapRenderer::SetRenderSettings(const RenderSettings& rs) {
     render_settings = rs;
@@ -131,8 +111,8 @@ svg::Document MapRenderer::BuildMap() {
 
 MapRenderer::SphereProjector MapRenderer::BuildSphereProjector() {
     std::vector<geo::Coordinates> all_coordinates;
-    all_coordinates.reserve(stops.size());
-    for (const auto [stop, buses] : stops_to_buses) {
+    all_coordinates.reserve(tc.stops.size());
+    for (const auto [stop, buses] : tc.stops_to_buses) {
         if (!buses.empty()) {
             all_coordinates.push_back({stop->latitude, stop->longitude});
         }
@@ -143,7 +123,7 @@ MapRenderer::SphereProjector MapRenderer::BuildSphereProjector() {
 
 void MapRenderer::AddLines(svg::Document& document, const SphereProjector& proj) {
     size_t color_index = 0;
-    for (const auto [busname, bus] : busname_to_bus) {        
+    for (const auto [busname, bus] : tc.busname_to_bus) {        
         if (bus->stops.empty()) {
             continue;
         }
@@ -164,7 +144,7 @@ void MapRenderer::AddLines(svg::Document& document, const SphereProjector& proj)
 
 void MapRenderer::AddLineNames(svg::Document& document, const SphereProjector& proj) {
     size_t color_index = 0;
-    for (const auto [busname, bus] : busname_to_bus) {
+    for (const auto [busname, bus] : tc.busname_to_bus) {
         if (bus->stops.empty()) {
             continue;
         }
@@ -198,8 +178,8 @@ void MapRenderer::AddLineNames(svg::Document& document, const SphereProjector& p
 }
 
 void MapRenderer::AddStationCircles(svg::Document& document, const SphereProjector& proj) {
-    for (const auto [stopname, stop] : stopname_to_stop) {
-        if (stops_to_buses[stop].empty()) {
+    for (const auto [stopname, stop] : tc.stopname_to_stop) {
+        if (tc.stops_to_buses.at(stop).empty()) {
             continue;
         }
         svg::Circle circle;
@@ -209,8 +189,8 @@ void MapRenderer::AddStationCircles(svg::Document& document, const SphereProject
 }
 
 void MapRenderer::AddStationNames(svg::Document& document, const SphereProjector& proj) {
-    for (const auto [stopname, stop] : stopname_to_stop) {
-        if (stops_to_buses[stop].empty()) {
+    for (const auto [stopname, stop] : tc.stopname_to_stop) {
+        if (tc.stops_to_buses.at(stop).empty()) {
             continue;
         }
         svg::Text text;
