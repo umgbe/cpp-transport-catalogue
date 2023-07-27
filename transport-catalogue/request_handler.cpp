@@ -6,15 +6,20 @@ using namespace transportCatalogue;
 using namespace transportCatalogue::requestsProcessing;
 using namespace std::string_literals;
 
-void RequestHandler::GetRequests(InterfaceIn& in) {
+void RequestHandler::GetBaseRequests(InterfaceIn& in) {
     while (in.GetFillRequestsCount() > 0) {
         fill_requests.push_back(in.GetNextFillRequest());
     }
+    render_settings = in.GetRenderSettings();
+    routing_settings = in.GetRoutingSettings();
+    serialization_settings = in.GetSerializationSettings();    
+}
+
+void RequestHandler::GetStatRequests(InterfaceIn& in) {
     while (in.GetSearchRequestsCount() > 0) {
         search_requests.push_back(in.GetNextSearchRequest());
     }
-    render_settings = in.GetRenderSettings();
-    routing_settings = in.GetRoutingSettings();    
+    serialization_settings = in.GetSerializationSettings(); 
 }
 
 void RequestHandler::Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr) {
@@ -61,5 +66,14 @@ void RequestHandler::Search(base::TransportCatalogue& tc, mapRenderer::MapRender
             search_requests.pop_front();
         }
     }
-    out.PrintAllAnswers();
+}
+
+bool RequestHandler::MakeBase(const base::TransportCatalogue& tc, const mapRenderer::MapRenderer& mr, const transportRouter::TransportRouter& tr) {
+    serialization::Serializer sr(serialization_settings);
+    return sr.Serialize(tc, mr, tr);
+}
+
+bool RequestHandler::RestoreBase(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr) {
+    serialization::Serializer sr(serialization_settings);
+    return sr.Deserialize(tc, mr, tr);
 }

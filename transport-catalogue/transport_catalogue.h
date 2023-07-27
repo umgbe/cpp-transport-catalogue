@@ -22,11 +22,13 @@ public:
     void AddStop(const requestsToFill::StopInfo& r);
     void AddBus(const requestsToFill::BusInfo& r);
 
-    answersFromBase::BusInfo GetBus(const requestsToSearch::BusInfo& r);
-    answersFromBase::StopInfo GetStop(const requestsToSearch::StopInfo& r);
+    answersFromBase::BusInfo GetBus(const requestsToSearch::BusInfo& r) const;
+    answersFromBase::StopInfo GetStop(const requestsToSearch::StopInfo& r) const;
 
     friend class mapRenderer::MapRenderer;
     friend class transportRouter::TransportRouter;
+
+    friend class serialization::Serializer;
 
 private:
 

@@ -10,7 +10,10 @@ class JsonReader : public InterfaceIn {
 
 public:
 
-    JsonReader(std::istream& in);
+    JsonReader() = default;
+
+    void ReadBaseRequests(std::istream& in);
+    void ReadStatRequests(std::istream& in);
 
     int GetFillRequestsCount() const override;
     fillInfo GetNextFillRequest() override;
@@ -22,12 +25,15 @@ public:
 
     transportRouter::RoutingSettings GetRoutingSettings() override;
 
+    serialization::SerializationSettings GetSerializationSettings() override;
+
 private:
 
     std::deque<fillInfo> fill_requests;
     std::deque<searchInfo> search_requests;
     mapRenderer::RenderSettings render_settings;
-    transportRouter::RoutingSettings routing_settings; 
+    transportRouter::RoutingSettings routing_settings;
+    serialization::SerializationSettings serialization_settings; 
 
 };
 
@@ -35,14 +41,13 @@ class JsonWriter : public InterfaceOut {
 
 public:
 
-    JsonWriter(std::ostream& out);
+    JsonWriter() = default;
 
     void AddRequestAnswer(const answerInfo& answer) override;
-    void PrintAllAnswers() override;
+    void PrintAllAnswers(std::ostream& out);
 
 private:
 
-    std::ostream& out_;
     std::deque<answerInfo> answers;
 
 };

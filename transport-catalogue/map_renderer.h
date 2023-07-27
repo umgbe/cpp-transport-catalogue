@@ -13,6 +13,7 @@ public:
     explicit MapRenderer(const transportCatalogue::base::TransportCatalogue& transport_catalogue);
 
     void SetRenderSettings(const RenderSettings& rs);
+    RenderSettings GetRenderSettings() const;
 
     MapRendererResponse GetMap(const requestToMapRenderer& r);
 

@@ -20,6 +20,10 @@ void MapRenderer::SetRenderSettings(const RenderSettings& rs) {
     render_settings = rs;
 }
 
+RenderSettings MapRenderer::GetRenderSettings() const {
+    return render_settings;
+}
+
 MapRendererResponse MapRenderer::GetMap(const requestToMapRenderer& r) {
     svg::Document document = BuildMap();
     std::ostringstream result;

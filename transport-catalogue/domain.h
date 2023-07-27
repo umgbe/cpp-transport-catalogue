@@ -74,6 +74,15 @@ struct StopInfo {
 
 }
 
+namespace serialization {
+
+    struct SerializationSettings {
+        std::string file;
+    };
+
+    class Serializer;
+}
+
 }
 
 namespace mapRenderer {

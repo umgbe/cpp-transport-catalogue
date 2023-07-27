@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "domain.h"
+
 namespace graph {
 
 template <typename Weight>
@@ -29,12 +31,20 @@ public:
 
     std::optional<RouteInfo> BuildRoute(VertexId from, VertexId to) const;
 
+    friend class transportCatalogue::serialization::Serializer;
+
 private:
     struct RouteInternalData {
         Weight weight;
         std::optional<EdgeId> prev_edge;
     };
     using RoutesInternalData = std::vector<std::vector<std::optional<RouteInternalData>>>;
+
+    Router(const Graph& graph, const RoutesInternalData& data) 
+        : graph_(graph)
+        , routes_internal_data_(data) {
+
+    }
 
     void InitializeRoutesInternalData(const Graph& graph) {
         const size_t vertex_count = graph.GetVertexCount();

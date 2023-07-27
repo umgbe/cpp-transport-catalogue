@@ -52,7 +52,7 @@ void TransportCatalogue::AddBus(const requestsToFill::BusInfo& r) {
     busname_to_bus.insert({buses.back().name, ptr});
 }
 
-answersFromBase::BusInfo TransportCatalogue::GetBus(const requestsToSearch::BusInfo& r) {
+answersFromBase::BusInfo TransportCatalogue::GetBus(const requestsToSearch::BusInfo& r) const {
     answersFromBase::BusInfo result;
     result.id = r.id;
     result.name = r.name;
@@ -61,7 +61,7 @@ answersFromBase::BusInfo TransportCatalogue::GetBus(const requestsToSearch::BusI
         return result;
     }
     result.no_bus = false;
-    Bus* ptr = busname_to_bus[r.name];
+    Bus* ptr = busname_to_bus.at(r.name);
     result.stops_count = ptr->stops.size();
 
     std::vector<Stop*> stops_without_duplicates(ptr->stops.begin(), ptr->stops.end());
@@ -74,7 +74,7 @@ answersFromBase::BusInfo TransportCatalogue::GetBus(const requestsToSearch::BusI
     double geo_distance = 0.0;
 
     for (size_t i = 1; i < ptr->stops.size(); ++i) {
-        result.distance += distances[{ptr->stops[i-1], ptr->stops[i]}];
+        result.distance += distances.at({ptr->stops[i-1], ptr->stops[i]});
         geo_distance += geo::ComputeDistance({ptr->stops[i-1]->latitude, ptr->stops[i-1]->longitude}, {ptr->stops[i]->latitude, ptr->stops[i]->longitude});
     }
 
@@ -83,7 +83,7 @@ answersFromBase::BusInfo TransportCatalogue::GetBus(const requestsToSearch::BusI
     return result;
 }
 
-answersFromBase::StopInfo TransportCatalogue::GetStop(const requestsToSearch::StopInfo& r) {
+answersFromBase::StopInfo TransportCatalogue::GetStop(const requestsToSearch::StopInfo& r) const {
     answersFromBase::StopInfo result;
     result.id = r.id;
     result.name = r.name;
@@ -92,7 +92,7 @@ answersFromBase::StopInfo TransportCatalogue::GetStop(const requestsToSearch::St
         return result;
     }
     result.no_stop = false;
-    for (const Bus* bus : stops_to_buses[stopname_to_stop[r.name]]) {
+    for (const Bus* bus : stops_to_buses.at(stopname_to_stop.at(r.name))) {
         result.buses.insert(bus->name);
     }
     if (result.buses.empty()) {

@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <vector>
 
+#include "domain.h"
+
 namespace graph {
 
 using VertexId = size_t;
@@ -32,6 +34,8 @@ public:
     size_t GetEdgeCount() const;
     const Edge<Weight>& GetEdge(EdgeId edge_id) const;
     IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
+
+    friend class transportCatalogue::serialization::Serializer;
 
 private:
     std::vector<Edge<Weight>> edges_;

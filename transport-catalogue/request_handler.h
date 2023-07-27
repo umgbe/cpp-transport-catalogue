@@ -9,6 +9,7 @@
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 #include "transport_router.h"
+#include "serialization.h"
 
 namespace transportCatalogue {
 
@@ -39,6 +40,8 @@ public:
 
     virtual transportRouter::RoutingSettings GetRoutingSettings() = 0;
 
+    virtual serialization::SerializationSettings GetSerializationSettings() = 0;
+
 };
 
 class InterfaceOut {
@@ -46,7 +49,6 @@ class InterfaceOut {
 public:
    
     virtual void AddRequestAnswer(const answerInfo& answer) = 0;
-    virtual void PrintAllAnswers() = 0;
 
 };
 
@@ -56,11 +58,14 @@ public:
 
     RequestHandler() = default;
 
-    void GetRequests(InterfaceIn& in);
+    void GetBaseRequests(InterfaceIn& in);
+    void GetStatRequests(InterfaceIn& in);
 
     void Fill(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr);
-
     void Search(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr, InterfaceOut& out);
+
+    bool MakeBase(const base::TransportCatalogue& tc, const mapRenderer::MapRenderer& mr, const transportRouter::TransportRouter& tr);
+    bool RestoreBase(base::TransportCatalogue& tc, mapRenderer::MapRenderer& mr, transportRouter::TransportRouter& tr);
 
 private:
 
@@ -68,6 +73,7 @@ private:
     std::deque<searchInfo> search_requests;
     mapRenderer::RenderSettings render_settings;
     transportRouter::RoutingSettings routing_settings;
+    serialization::SerializationSettings serialization_settings;
 
 };
 

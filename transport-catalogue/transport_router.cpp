@@ -16,7 +16,6 @@ void TransportRouter::BuildGraph() {
     vertex_count = 0;
 
     stops_in_graph.clear();
-    vertexes_to_stops.clear();
     edges_to_routes.clear();
     router.reset();
 
@@ -33,8 +32,6 @@ void TransportRouter::BuildGraph() {
         ++vertex_count;
         routing_stop.real_stop = stop_ptr;
 
-        vertexes_to_stops[waiting_stop.id] = waiting_stop;
-        vertexes_to_stops[routing_stop.id] = routing_stop;
         stops_in_graph[stop_ptr] = { waiting_stop, routing_stop };
 
         graph::Edge<double> new_edge;

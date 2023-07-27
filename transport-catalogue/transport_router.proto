@@ -1,0 +1,79 @@
+syntax="proto3";
+
+package transportCatalogueSerialized;
+
+message RoutingSettings {
+    uint32 bus_wait_time = 1;
+    double bus_velocity = 2;
+}
+
+message StopInGraph {
+    uint32 real_stop = 1;
+    uint32 id = 2;          //graph::VertexId
+}
+
+//std::unordered_map<const Stop*, std::pair<StopInGraph, StopInGraph>> stops_in_graph;
+message StopsInGraphMap {
+    repeated uint32 unique_id = 1;
+    repeated StopInGraph first = 2;
+    repeated StopInGraph second = 3;
+}
+
+message RouteInGraph {
+    bool type = 1;              // true = WAIT, false = BUS
+    double time = 2;
+    uint32 real_stop = 3;
+    uint32 real_bus = 4;
+    uint32 stops_count = 5;
+    uint32 id = 6;              // graph::EdgeId
+
+}
+
+//std::unordered_map<graph::EdgeId, RouteInGraph> edges_to_routes;
+message EdgesToRoutesMap {
+    repeated uint64 id = 1;
+    repeated RouteInGraph routes = 2;
+
+}
+
+message Edge {
+    uint32 from = 1;
+    uint32 to = 2;
+    double weight = 3;
+}
+
+message IncidenceList {
+    repeated uint32 id = 1;
+}
+
+message Graph {
+    repeated Edge edges_ = 1;
+    repeated IncidenceList incidence_lists_ = 2;
+}
+
+message RouteInternalData {
+    double weight = 1;
+    bool prev_edge_exists = 2;
+    uint32 prev_edge = 3;
+}
+
+//std::vector<std::optional<RouteInternalData>>  
+message RouteInternalDataVector {                      
+    repeated bool route_internal_data_exists = 1;
+    repeated RouteInternalData route_internal_data = 2; 
+}
+
+//std::vector<std::vector<std::optional<RouteInternalData>>>
+message Router {
+    repeated RouteInternalDataVector routes_internal_data_ = 1;
+}
+
+message TransportRouter {
+
+    RoutingSettings routing_settings = 1;
+    StopsInGraphMap stops_in_graph = 2;
+    EdgesToRoutesMap edges_to_routes = 3;
+    Graph routing_graph = 4;
+    Router router = 5;
+
+}

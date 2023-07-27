@@ -7,13 +7,13 @@ using namespace transportCatalogue::requestsProcessing;
 using namespace json;
 using namespace std::string_literals;
 
-JsonReader::JsonReader(std::istream& in) {
+void JsonReader::ReadBaseRequests(std::istream& in) {
     const Document data = json::Load(in);
     const Dict& all_requests = data.GetRoot().AsDict();
     const Array& base_requests = all_requests.at("base_requests"s).AsArray();
-    const Array& stat_requests = all_requests.at("stat_requests"s).AsArray();
     const Dict& render = all_requests.at("render_settings"s).AsDict();
     const Dict& routing = all_requests.at("routing_settings"s).AsDict();
+    const Dict& serializ = all_requests.at("serialization_settings"s).AsDict();
     for (const Node& node : base_requests) {
         const Dict& request = node.AsDict();
         if (request.at("type"s).AsString() == "Stop"s) {
@@ -44,32 +44,6 @@ JsonReader::JsonReader(std::istream& in) {
                 result.roundtrip = true;
             }
             fill_requests.push_back(std::move(result));
-        } else {
-            throw std::logic_error("неизвестный тип запроса"s);
-        }
-    }
-    for (const Node& node : stat_requests) {
-        const Dict& request = node.AsDict();
-        if (request.at("type").AsString() == "Stop"s) {
-            requestsToSearch::StopInfo result;
-            result.name = request.at("name"s).AsString();
-            result.id = request.at("id"s).AsInt();
-            search_requests.push_back(std::move(result));
-        } else if (request.at("type").AsString() == "Bus"s) {
-            requestsToSearch::BusInfo result;
-            result.name = request.at("name"s).AsString();
-            result.id = request.at("id"s).AsInt();
-            search_requests.push_back(std::move(result));
-        } else if (request.at("type").AsString() == "Map"s) {
-            mapRenderer::requestToMapRenderer result;
-            result.id = request.at("id"s).AsInt();
-            search_requests.push_back(std::move(result));
-        }  else if (request.at("type"s).AsString() == "Route"s) {
-            transportRouter::requestToRouter result;
-            result.id = request.at("id"s).AsInt();
-            result.from = request.at("from"s).AsString();
-            result.to = request.at("to"s).AsString();
-            search_requests.push_back(std::move(result));
         } else {
             throw std::logic_error("неизвестный тип запроса"s);
         }
@@ -118,6 +92,41 @@ JsonReader::JsonReader(std::istream& in) {
         }
     }
     routing_settings = {routing.at("bus_wait_time"s).AsInt(), routing.at("bus_velocity").AsDouble()};
+    serialization_settings.file = serializ.at("file"s).AsString();
+}
+
+void JsonReader::ReadStatRequests(std::istream& in) {
+    const Document data = json::Load(in);
+    const Dict& all_requests = data.GetRoot().AsDict();
+    const Array& stat_requests = all_requests.at("stat_requests"s).AsArray();
+    const Dict& serializ = all_requests.at("serialization_settings"s).AsDict();
+    for (const Node& node : stat_requests) {
+        const Dict& request = node.AsDict();
+        if (request.at("type").AsString() == "Stop"s) {
+            requestsToSearch::StopInfo result;
+            result.name = request.at("name"s).AsString();
+            result.id = request.at("id"s).AsInt();
+            search_requests.push_back(std::move(result));
+        } else if (request.at("type").AsString() == "Bus"s) {
+            requestsToSearch::BusInfo result;
+            result.name = request.at("name"s).AsString();
+            result.id = request.at("id"s).AsInt();
+            search_requests.push_back(std::move(result));
+        } else if (request.at("type").AsString() == "Map"s) {
+            mapRenderer::requestToMapRenderer result;
+            result.id = request.at("id"s).AsInt();
+            search_requests.push_back(std::move(result));
+        }  else if (request.at("type"s).AsString() == "Route"s) {
+            transportRouter::requestToRouter result;
+            result.id = request.at("id"s).AsInt();
+            result.from = request.at("from"s).AsString();
+            result.to = request.at("to"s).AsString();
+            search_requests.push_back(std::move(result));
+        } else {
+            throw std::logic_error("неизвестный тип запроса"s);
+        }
+    }
+    serialization_settings.file = serializ.at("file"s).AsString();
 }
 
 int JsonReader::GetFillRequestsCount() const {
@@ -148,14 +157,15 @@ transportRouter::RoutingSettings JsonReader::GetRoutingSettings() {
     return routing_settings;
 }
 
-JsonWriter::JsonWriter(std::ostream& out) 
-: out_(out) {}
+serialization::SerializationSettings JsonReader::GetSerializationSettings() {
+    return serialization_settings;
+}
 
 void JsonWriter::AddRequestAnswer(const answerInfo& answer) {
     answers.push_back(answer);
 }
 
-void JsonWriter::PrintAllAnswers() {
+void JsonWriter::PrintAllAnswers(std::ostream& out) {
     json::Builder builder;
     builder.StartArray();
     while (!answers.empty()) {
@@ -223,5 +233,5 @@ void JsonWriter::PrintAllAnswers() {
         builder.EndDict();
     }
     builder.EndArray();
-    json::Print(Document(builder.Build()), out_);
+    json::Print(Document(builder.Build()), out);
 }

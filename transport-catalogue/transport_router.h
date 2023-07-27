@@ -19,6 +19,8 @@ public:
 
     RouterResponce GetRoute(const requestToRouter& r) const;
 
+    friend class serialization::Serializer;
+
 private:
 
     const base::TransportCatalogue& tc;
@@ -46,7 +48,6 @@ private:
     };
 
     std::unordered_map<const Stop*, std::pair<StopInGraph, StopInGraph>> stops_in_graph;
-    std::unordered_map<graph::VertexId, StopInGraph> vertexes_to_stops;
     std::unordered_map<graph::EdgeId, RouteInGraph> edges_to_routes;
     
 
